@@ -90,14 +90,27 @@ fun main() {
         }
     }
 
+    //This method is repeated in the class too, so watch out!
+    fun calculateLoad(grid: Array<Array<Char>>): Int {
+        return grid.mapIndexed { index, row ->
+            val c = row.count { it == 'O' }
+            c * (grid.size - index)
+        }
+            .sum()
+
+    }
+
+
     fun part2(input: List<String>): Int {
         val dish = Dish(input)
 
-        val gridHashCodes = mutableSetOf<Int>()
+        //hashCode of grid to Pair<grid, iteration number>
+        val gridHashCodes = mutableMapOf<Int, Pair<Array<Array<Char>>, Int> >()
 
-
-        //TODO: incomplete ... takes too long to brute force, have to detect if there is a cycle
-        (1..1_000).forEach {
+        var i = 1
+        var repeatsEvery: Int = -1
+        var firstOccurrence = -1
+        while (i <= 1_000_000) {
             tiltNorth(dish)
 //        dish.printGrid()
 
@@ -109,16 +122,40 @@ fun main() {
 
             tiltEast(dish)
 //        dish.printGrid()
-            if (it%10_000 == 0) {
-                println("done with ... ${it}. gridHashCodes.size=${gridHashCodes.size}")
+            if (i%10_000 == 0) {
+                println("done with ... ${i}. gridHashCodes.size=${gridHashCodes.size}")
             }
 
-            gridHashCodes.add(dish.grid.hashCode())
-//            println("After ${it} cycle...")
+            if (gridHashCodes.get(dish.grid.contentDeepHashCode()) != null) {
+                println("Repeated at $i ")
+                println("gridHashCodes.get(dish.grid.contentDeepHashCode()) = ${gridHashCodes.get(dish.grid.contentDeepHashCode())}")
+                firstOccurrence = gridHashCodes.get(dish.grid.contentDeepHashCode())?.second!!
+                repeatsEvery = i - firstOccurrence
+                break;
+            }
+            gridHashCodes.put(dish.grid.contentDeepHashCode(), Pair(deepCopyArray(dish.grid), i))
+
+//            val currCount = gridHashCodes.getOrDefault(dish.grid.contentDeepHashCode(), 0)
+//            gridHashCodes.put(dish.grid.contentDeepHashCode(), currCount + 1)
 //            dish.printGrid()
+            i++
         }
 
-        return dish.calculateLoad()
+        println("-- all so far --")
+        gridHashCodes.values.forEach {
+            println("${it} => ${calculateLoad(it.first)}")
+        }
+
+        if (repeatsEvery > -1) {
+            println("Pattern repeats every ${repeatsEvery}th time after the ${firstOccurrence} iteration")
+            //therefore, 1_000_000_000 occurrence will be same as,
+            val finalLayoutIterationNumber = (1_000_000_000 - firstOccurrence) % (repeatsEvery) + firstOccurrence
+            val finalGrid = gridHashCodes.values.filter { it.second == finalLayoutIterationNumber }.first()
+            println("finalGrid.first.calculateLoad() = ${calculateLoad(finalGrid.first)}")
+            return calculateLoad(finalGrid.first)
+        } else {
+            throw RuntimeException("this is impossible!")
+        }
     }
 
 //    val testInput = readInput("Day14_test")
@@ -126,10 +163,10 @@ fun main() {
 //    val input = readInput("Day14")
 //    part1(input).println()
 
-    val testInput2 = readInput("Day14_test")
-    check(part2(testInput2) == 1000)
-//    val input2 = readInput("Day14")
-//    part2(input2).println()
+//    val testInput2 = readInput("Day14_test")
+//    check(part2(testInput2) == 64)
+    val input2 = readInput("Day14")
+    part2(input2).println()
 
 }
 

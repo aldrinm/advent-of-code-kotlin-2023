@@ -19,3 +19,11 @@ fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteA
  * The cleaner shorthand for printing output.
  */
 fun Any?.println() = println(this)
+
+fun deepCopyArray(src: Array<Array<Char>>): Array<Array<Char>> {
+    val arrCopy = Array(src.size) { Array(src[0].size) {'.'} }
+    (0..<src.size).forEach {
+        System.arraycopy(src[it], 0, arrCopy[it], 0, src[it].size)
+    }
+    return arrCopy
+}
