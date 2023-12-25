@@ -1,4 +1,5 @@
 import java.util.*
+import kotlin.math.absoluteValue
 
 fun main() {
 
@@ -177,21 +178,76 @@ fun main() {
         return visitedNodes.maxOf { it.depthLevel }
     }
 
-    fun part2(input: List<String>): Int {
-        return 1
+    fun getTheTravelPath(visitedNodes: List<Cell>, grid: Array<Array<Char>>): List<Cell> {
+        //using depth, traverse in both directions and then join
+        val dir1 = mutableListOf<Cell>()
+        val dir2 = mutableListOf<Cell>()
+        val start = visitedNodes.minBy { it.depthLevel }
+        val end = visitedNodes.maxBy { it.depthLevel }
+
+        //find nodes at depth 1 to start with
+        val nodesAtDepthOne = visitedNodes.filter { it.depthLevel == 1 }
+        dir1.add(start)
+        dir1.add(nodesAtDepthOne[0])
+        var dir1CurrNode = nodesAtDepthOne[0]
+        dir2.add(nodesAtDepthOne[1])
+        var dir2CurrNode = nodesAtDepthOne[1]
+
+        (2..<end.depthLevel).forEach { depth ->
+            val nodesAtDepth = visitedNodes.filter { it.depthLevel == depth }
+                .forEach {
+                    if (validNeighbours(grid, dir1CurrNode).contains(it)) {
+                        dir1.add(it)
+                        dir1CurrNode = it
+                    } else {
+                        dir2.add(it)
+                        dir2CurrNode = it
+                    }
+                }
+        }
+
+//        println("dir1 = ${dir1}")
+//        println("dir2 = ${dir2}")
+
+        dir1.add(end)
+        dir1.addAll(dir2.reversed())
+        return dir1
     }
 
-    val testInput1 = readInput("Day10_test1")
-    check(part1(testInput1) == 4)
-    val testInput2 = readInput("Day10_test2")
-    check(part1(testInput2) == 8)
-    val input = readInput("Day10")
-    part1(input).println()
+    fun calculateInternalPoints(visitedNodes: List<Cell>, grid: Array<Array<Char>>): Int {
+        //ref: https://en.wikipedia.org/wiki/Shoelace_formula
+        val travelPath = getTheTravelPath(visitedNodes, grid)
+        val perimeterNodes = travelPath.distinct()
+        val perimeter = perimeterNodes.size
+        println("perimeter = ${perimeterNodes.size}")
+        val area = perimeterNodes.zip(perimeterNodes.drop(1) + perimeterNodes.take(1)) { a, b -> a.x * b.y - a.y * b.x }.sum().absoluteValue / 2
+        println("areas = ${area}")
+        val points = area - (perimeter / 2) + 1
+        println("points = ${points}")
+        return points
+    }
 
-//    val testInput2 = readInput("Day07_test")
-//    check(part2(testInput2) == 281)
-//    val input2 = readInput("Day07")
-//    part2(input2).println()
+    fun part2(input: List<String>): Int {
+        val field = parseInput(input)
+        val visitedNodes = bfs(field.grid, field.startCell).distinct()
+
+        //ray-cast from each cell not in the border in the right direction
+        println("visitedNodes = ${visitedNodes}")
+
+        return calculateInternalPoints(visitedNodes, field.grid)
+    }
+
+//    val testInput1 = readInput("Day10_test1")
+//    check(part1(testInput1) == 4)
+//    val testInput2 = readInput("Day10_test2")
+//    check(part1(testInput2) == 8)
+//    val input = readInput("Day10")
+//    part1(input).println()
+
+//    val testInput2 = readInput("Day10_test21")
+//    check(part2(testInput2) == 4)
+    val input2 = readInput("Day10")
+    part2(input2).println()
 
 }
 
